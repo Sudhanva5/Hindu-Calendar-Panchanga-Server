@@ -3,8 +3,8 @@ builder = "NIXPACKS"
 buildCommand = "pip install -r requirements.txt"
 
 [deploy]
-startCommand = "gunicorn -w 4 -k uvicorn.workers.UvicornWorker main:app --bind 0.0.0.0:$PORT"
-healthcheckPath = "/health"
+startCommand = "gunicorn main:app --bind 0.0.0.0:$PORT"
+healthcheckPath = "/panchanga"
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 3
 

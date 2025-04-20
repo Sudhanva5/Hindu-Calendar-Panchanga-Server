@@ -32,6 +32,29 @@ class VedicDateTime:
             "Bhadrapada", "Ashwina", "Kartika", "Margashirsha", "Pausha",
             "Magha", "Phalguna"
         ]
+        self.solar_masa_names = [
+            "Mesha", "Vrishabha", "Mithuna", "Karka", "Simha",
+            "Kanya", "Tula", "Vrischika", "Dhanu", "Makara",
+            "Kumbha", "Meena"
+        ]
+        self.rutu_names = [
+            "Vasantha", "Grishma", "Varsha",
+            "Sharad", "Hemanta", "Shishira"
+        ]
+        self.samvatsara_names = [
+            "Prabhava", "Vibhava", "Shukla", "Pramoda", "Prajapati",
+            "Angirasa", "Srimukha", "Bhava", "Yuva", "Dhatri",
+            "Ishvara", "Bahudhanya", "Pramathi", "Vikrama", "Vrisha",
+            "Chitrabhanu", "Svabhanu", "Tarana", "Parthiva", "Vyaya",
+            "Sarvajit", "Sarvadhari", "Virodhi", "Vikruti", "Khara",
+            "Nandana", "Vijaya", "Jaya", "Manmatha", "Durmukhi",
+            "Hevilambi", "Vilambi", "Vikari", "Sharvari", "Plava",
+            "Shubhakrut", "Shobhana", "Krodhi", "Vishvavasu", "Parabhava",
+            "Plavanga", "Kilaka", "Saumya", "Sadharana", "Virodhikrut",
+            "Paridhavi", "Pramadicha", "Ananda", "Rakshasa", "Nala",
+            "Pingala", "Kalayukti", "Siddharthi", "Raudra", "Durmati",
+            "Dundubhi", "Rudhirodgari", "Raktakshi", "Krodhana", "Akshaya"
+        ]
         self.karana_names = [
             "Bava", "Balava", "Kaulava", "Taitila", "Garija",
             "Vanija", "Vishti", "Shakuni", "Chatushpada", "Naga"
@@ -178,6 +201,61 @@ class VedicDateTime:
             "is_adhika": False  # Simplified, actual calculation needs more parameters
         }
 
+    def get_samvatsara(self):
+        """Calculate samvatsara using Drik Ganita method"""
+        # Constants
+        SIDEREAL_YEAR = 365.25636
+        KALI_EPOCH = 588465.5  # Julian day of Kali epoch
+
+        # Convert date to Julian day
+        jd = ephem.Date(self.date).real + 2415020  # Convert PyEphem date to Julian day
+
+        # Get masa number (1-12)
+        masa = self.get_masa()
+        masa_num = masa["number"]
+
+        # Calculate ahargana (elapsed days since Kali epoch)
+        ahar = jd - KALI_EPOCH
+
+        # Calculate Kali year
+        kali = int((ahar + (4 - masa_num) * 30) / SIDEREAL_YEAR)
+
+        # Apply corrections for current era
+        if kali >= 4009:
+            kali = (kali - 14) % 60
+
+        # Calculate samvatsara number (1-60)
+        samvat = (kali + 27 + int((kali * 211 - 108)/18000)) % 60
+        if samvat == 0:
+            samvat = 60
+
+        return {
+            "name": self.samvatsara_names[samvat - 1],
+            "number": samvat
+        }
+
+    def get_rutu(self):
+        """Calculate the Rutu (season) based on solar month"""
+        solar_month = self._get_solar_month()
+        rutu_index = (solar_month // 2) % 6
+        return {
+            "name": self.rutu_names[rutu_index],
+            "number": rutu_index + 1
+        }
+
+    def _get_solar_month(self):
+        """Get the solar month (0-11) based on sun's position"""
+        sun_long = self._sun_position()
+        return int(sun_long / 30) % 12
+
+    def get_solar_masa(self):
+        """Get the solar month name and number"""
+        solar_month = self._get_solar_month()
+        return {
+            "name": self.solar_masa_names[solar_month],
+            "number": solar_month + 1
+        }
+
 def get_panchanga(date=None, lat=0, lon=0):
     """Get complete panchanga for given date and location"""
     vdt = VedicDateTime(date, lat, lon)
@@ -189,10 +267,9 @@ def get_panchanga(date=None, lat=0, lon=0):
         "masa": vdt.get_masa(),
         "yoga": vdt.get_yoga(),
         "karana": vdt.get_karana(),
-        "samvatsara": {
-            "name": "Ananda",  # TODO: Implement actual calculation
-            "number": 1
-        },
+        "samvatsara": vdt.get_samvatsara(),
+        "rutu": vdt.get_rutu(),
+        "solar_masa": vdt.get_solar_masa(),
         "ayana": vdt.get_ayana(),
         "arke": vdt.get_arke(),
         "sunrise": sunrise.isoformat(),

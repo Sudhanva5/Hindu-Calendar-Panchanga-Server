@@ -1,36 +1,30 @@
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
+from flask import Flask, request, jsonify
+from flask_cors import CORS
+import os
 from datetime import datetime
-from vedictime import VedicDateTime
+from vedictime import VedicDateTime, get_panchanga
 
-app = FastAPI(
-    title="Panchanga API",
-    description="API for Hindu Panchanga calculations",
-    version="1.0.0"
-)
+app = Flask(__name__)
+CORS(app)
 
-# Configure CORS
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # Update this with your iOS app's domain in production
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+@app.route('/health')
+def health_check():
+    return jsonify({"status": "healthy"}), 200
 
-@app.get("/health")
-async def health_check():
-    return {"status": "healthy", "timestamp": datetime.utcnow().isoformat()}
-
-@app.get("/panchanga")
-async def get_panchanga(date: str, lat: float, lng: float):
+@app.route('/panchanga')
+def get_panchanga_api():
     try:
+        date = request.args.get('date')
+        lat = float(request.args.get('lat'))
+        lng = float(request.args.get('lng'))
+        
         date_obj = datetime.strptime(date, "%Y-%m-%d")
         vdt = VedicDateTime(date_obj, lat, lng)
+        sunrise, sunset = vdt.get_sunrise_sunset()
         
-        return {
-            "sunrise": vdt.get_sunrise().isoformat(),
-            "sunset": vdt.get_sunset().isoformat(),
+        return jsonify({
+            "sunrise": sunrise.isoformat(),
+            "sunset": sunset.isoformat(),
             "tithi": vdt.get_tithi(),
             "nakshatra": vdt.get_nakshatra(),
             "yoga": vdt.get_yoga(),
@@ -38,11 +32,12 @@ async def get_panchanga(date: str, lat: float, lng: float):
             "masa": vdt.get_masa(),
             "samvatsara": vdt.get_samvatsara(),
             "ayana": vdt.get_ayana(),
-            "ritu": vdt.get_rutu(),
+            "rutu": vdt.get_rutu(),
             "solar_masa": vdt.get_solar_masa()
-        }
+        })
     except Exception as e:
-        return {"error": str(e)}
+        return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5001) 
+    port = int(os.environ.get('PORT', 5001))
+    app.run(host='0.0.0.0', port=port) 
