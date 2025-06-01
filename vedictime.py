@@ -59,6 +59,14 @@ class VedicDateTime:
             "Bava", "Balava", "Kaulava", "Taitila", "Garija",
             "Vanija", "Vishti", "Shakuni", "Chatushpada", "Naga"
         ]
+        self.yoga_names = [
+            "Vishkhamba", "Preeti", "Ayushmaan", "Saubhaagya", "Sobhana",
+            "Atiganda", "Sukarman", "Dhriti", "Shoola", "Ganda",
+            "Vriddhi", "Dhruva", "Vyaaghaata", "Harshana", "Vajra",
+            "Siddhi", "Vyatipaata", "Variyan", "Parigha", "Shiva",
+            "Siddha", "Saadhya", "Subha", "Sukla", "Brahma",
+            "Indra", "Vaidhriti"
+        ]
         
     def _setup_observer(self):
         observer = ephem.Observer()
@@ -175,7 +183,7 @@ class VedicDateTime:
         
         return {
             "number": yoga_num,
-            "name": f"Yoga {yoga_num}"  # Replace with actual yoga names
+            "name": self.yoga_names[yoga_num - 1]
         }
     
     def get_karana(self):
